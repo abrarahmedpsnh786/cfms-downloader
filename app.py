@@ -3,6 +3,7 @@ import asyncio
 import os
 import re
 import smtplib
+import subprocess
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -10,14 +11,25 @@ from email import encoders
 from playwright.async_api import async_playwright
 from pypdf import PdfWriter
 
+# Install Playwright Chromium Automatically on Cloud Startup
+@st.cache_resource
+def install_playwright_browsers():
+    try:
+        subprocess.run(["playwright", "install", "chromium"], check=True)
+        subprocess.run(["playwright", "install-deps"], check=True)
+    except Exception as e:
+        print(f"Playwright Install Warning: {e}")
+
+install_playwright_browsers()
+
 # SHC Credentials
 SHC_EMAIL = "adocate33@gmail.com"
 SHC_PASS = "advocate33"
 
 # Email Configuration
 TARGET_EMAIL = "abrarahmedpsnk786@gmail.com"
-SENDER_EMAIL = "adocate33@gmail.com"  # Email sending ke liye
-SENDER_PASSWORD = "advocate33"        # Gmail App Password
+SENDER_EMAIL = "adocate33@gmail.com"
+SENDER_PASSWORD = "advocate33"
 
 st.set_page_config(page_title="CFMS Downloader", page_icon="⚖️", layout="centered")
 
@@ -68,7 +80,17 @@ async def run_automation():
     status.info("🌐 Step 1: Searching CFMS Portal...")
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        # Launch Chromium with Linux Cloud Sandbox Bypass Arguments
+        browser = await p.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--no-zygote"
+            ]
+        )
         context = await browser.new_context(accept_downloads=True)
         page = await context.new_page()
 
